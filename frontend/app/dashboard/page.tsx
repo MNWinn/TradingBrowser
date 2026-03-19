@@ -35,6 +35,7 @@ import { useMarketStream } from '@/lib/useMarketStream'
 import { Sidebar } from '@/components/Sidebar'
 import { ChartPane } from '@/components/ChartPane'
 import { ProbabilityDrawer } from '@/components/ProbabilityDrawer'
+import { AgentFleetVisualizer } from '@/components/agents'
 
 const USER_ID = 'demo'
 const INDEX_TICKERS = ['SPY', 'QQQ', 'IWM']
@@ -641,6 +642,7 @@ export default function DashboardPage() {
       {active === 'overview' && (
         loadingCore ? <SkeletonGrid /> : (
           <section className="space-y-3 section-transition">
+            <AgentFleetVisualizer />
             <section className="grid grid-cols-1 md:grid-cols-4 gap-3">
               <MetricCard label="Avg Index Move" value={`${avgIndexMove.toFixed(2)}%`} tone={Math.abs(avgIndexMove) > 1 ? 'warn' : 'default'} />
               <MetricCard
