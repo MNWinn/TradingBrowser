@@ -38,7 +38,7 @@ class MiroFishPrediction(Base):
     confidence: Mapped[float] = mapped_column(Float)
     timeframe: Mapped[str] = mapped_column(String(16), index=True)  # 5m, 1h, 1d, etc.
     lens: Mapped[str] = mapped_column(String(32), default="overall")  # trend, momentum, catalyst, etc.
-    metadata: Mapped[dict] = mapped_column(JSON, default=dict)
+    prediction_metadata: Mapped[dict] = mapped_column(JSON, default=dict)
     price_at_prediction: Mapped[float | None] = mapped_column(Float, nullable=True)
     
     # Timestamps
@@ -68,7 +68,7 @@ class PredictionOutcome(Base):
     outcome_price: Mapped[float] = mapped_column(Float)
     outcome_time: Mapped[datetime] = mapped_column(DateTime, default=lambda: datetime.now(timezone.utc))
     was_correct: Mapped[bool] = mapped_column(Boolean, index=True)
-    metadata: Mapped[dict] = mapped_column(JSON, default=dict)
+    prediction_metadata: Mapped[dict] = mapped_column(JSON, default=dict)
     
     # Relationship
     prediction: Mapped[MiroFishPrediction] = relationship("MiroFishPrediction", back_populates="outcome")
