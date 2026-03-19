@@ -17,6 +17,7 @@ from app.routers import (
     signals,
     mirofish,
     swarm,
+    agents,
     risk,
     execution,
     alpaca,
@@ -57,6 +58,7 @@ app.include_router(chart.router)
 app.include_router(signals.router)
 app.include_router(mirofish.router)
 app.include_router(swarm.router)
+app.include_router(agents.router)
 app.include_router(risk.router)
 app.include_router(execution.router)
 app.include_router(alpaca.router)

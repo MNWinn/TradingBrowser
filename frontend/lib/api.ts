@@ -1,3 +1,5 @@
+import { useEffect, useRef, useState } from 'react'
+
 const API_BASE = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:8000'
 
 const DEV_ADMIN_TOKEN = process.env.NEXT_PUBLIC_ADMIN_API_TOKEN || 'admin-dev-token'
@@ -400,4 +402,270 @@ export async function exportComplianceCsv(filters?: {
     throw new Error(maybeJson?.detail || 'CSV export failed')
   }
   return res.text()
+}
+
+// ==================== Agent Types ====================
+
+export interface AgentHealth {
+  status?: 'healthy' | 'degraded' | 'unhealthy' | 'unknown'
+  score?: number
+  uptime?: string
+  successRate?: number
+  lastErrorAt?: string
+  checks?: Array<{
+    name: string
+    ok: boolean
+    detail?: string
+  }>
+}
+
+export interface AgentPerformance {
+  tasksCompleted?: number
+  tasksFailed?: number
+  avgTaskDuration?: number
+  metrics?: Record<string, any>
+}
+
+export interface Agent {
+  id: string
+  name: string
+  type?: string
+  version?: string
+  status: 'running' | 'idle' | 'error' | 'paused' | 'unknown'
+  health?: AgentHealth
+  currentTask?: string
+  ticker?: string
+  taskStartedAt?: string
+  lastActivityAt?: string
+  createdAt?: string
+  performance?: AgentPerformance
+  metadata?: Record<string, any>
+}
+
+export interface AgentLog {
+  timestamp: string
+  level: 'debug' | 'info' | 'warn' | 'error'
+  message: string
+  metadata?: Record<string, any>
+}
+
+export interface AgentOutput {
+  timestamp: string
+  type?: string
+  data: any
+}
+
+// ==================== Agent API ====================
+
+export async function getAgents(): Promise<{ agents: Agent[] }> {
+  const res = await fetch(`${API_BASE}/agents`, {
+    cache: 'no-store',
+    headers: { ...authHeaders('analyst') },
+  })
+  return asJson(res)
+}
+
+export async function getAgent(id: string): Promise<Agent> {
+  const res = await fetch(`${API_BASE}/agents/${id}`, {
+    cache: 'no-store',
+    headers: { ...authHeaders('analyst') },
+  })
+  return asJson(res)
+}
+
+export async function getAgentLogs(id: string, limit = 100): Promise<{ logs: AgentLog[] }> {
+  const res = await fetch(`${API_BASE}/agents/${id}/logs?limit=${limit}`, {
+    cache: 'no-store',
+    headers: { ...authHeaders('analyst') },
+  })
+  return asJson(res)
+}
+
+export async function getAgentOutputs(id: string, limit = 50): Promise<{ outputs: AgentOutput[] }> {
+  const res = await fetch(`${API_BASE}/agents/${id}/outputs?limit=${limit}`, {
+    cache: 'no-store',
+    headers: { ...authHeaders('analyst') },
+  })
+  return asJson(res)
+}
+
+// ==================== WebSocket Helper ====================
+
+export interface WebSocketMessage {
+  type: string
+  payload: any
+  timestamp: string
+}
+
+type WebSocketEventHandler = (message: WebSocketMessage) => void
+
+export interface AgentWebSocketConnection {
+  connect: () => void
+  disconnect: () => void
+  subscribe: (eventType: string, handler: WebSocketEventHandler) => () => void
+  isConnected: () => boolean
+}
+
+export function createAgentWebSocket(
+  agentId?: string,
+  options?: {
+    onConnect?: () => void
+    onDisconnect?: () => void
+    onError?: (error: Event) => void
+    reconnectInterval?: number
+    maxReconnectAttempts?: number
+  }
+): AgentWebSocketConnection {
+  let ws: WebSocket | null = null
+  let reconnectAttempts = 0
+  let reconnectTimer: number | null = null
+  const handlers = new Map<string, Set<WebSocketEventHandler>>()
+  const allHandlers = new Set<WebSocketEventHandler>()
+
+  const {
+    onConnect,
+    onDisconnect,
+    onError,
+    reconnectInterval = 3000,
+    maxReconnectAttempts = 5,
+  } = options || {}
+
+  // Build WebSocket URL
+  const getWsUrl = () => {
+    const baseUrl = API_BASE.replace(/^http/, 'ws')
+    return agentId ? `${baseUrl}/agents/${agentId}/ws` : `${baseUrl}/agents/ws`
+  }
+
+  const handleMessage = (event: MessageEvent) => {
+    try {
+      const message: WebSocketMessage = JSON.parse(event.data)
+      
+      // Notify type-specific handlers
+      const typeHandlers = handlers.get(message.type)
+      if (typeHandlers) {
+        typeHandlers.forEach((handler) => {
+          try {
+            handler(message)
+          } catch (e) {
+            console.error('WebSocket handler error:', e)
+          }
+        })
+      }
+      
+      // Notify all handlers
+      allHandlers.forEach((handler) => {
+        try {
+          handler(message)
+        } catch (e) {
+          console.error('WebSocket handler error:', e)
+        }
+      })
+    } catch (e) {
+      console.error('Failed to parse WebSocket message:', e)
+    }
+  }
+
+  const connect = () => {
+    if (ws?.readyState === WebSocket.OPEN) return
+
+    try {
+      ws = new WebSocket(getWsUrl())
+
+      ws.onopen = () => {
+        reconnectAttempts = 0
+        onConnect?.()
+      }
+
+      ws.onclose = () => {
+        onDisconnect?.()
+        
+        // Attempt reconnection
+        if (reconnectAttempts < maxReconnectAttempts) {
+          reconnectAttempts++
+          reconnectTimer = window.setTimeout(() => {
+            console.log(`Reconnecting... attempt ${reconnectAttempts}`)
+            connect()
+          }, reconnectInterval)
+        }
+      }
+
+      ws.onerror = (error) => {
+        onError?.(error)
+      }
+
+      ws.onmessage = handleMessage
+    } catch (e) {
+      console.error('Failed to create WebSocket connection:', e)
+      onError?.(e as Event)
+    }
+  }
+
+  const disconnect = () => {
+    if (reconnectTimer) {
+      window.clearTimeout(reconnectTimer)
+      reconnectTimer = null
+    }
+    reconnectAttempts = maxReconnectAttempts // Prevent reconnection
+    ws?.close()
+    ws = null
+  }
+
+  const subscribe = (eventType: string, handler: WebSocketEventHandler) => {
+    if (!handlers.has(eventType)) {
+      handlers.set(eventType, new Set())
+    }
+    handlers.get(eventType)!.add(handler)
+
+    // Return unsubscribe function
+    return () => {
+      handlers.get(eventType)?.delete(handler)
+    }
+  }
+
+  const isConnected = () => ws?.readyState === WebSocket.OPEN
+
+  return {
+    connect,
+    disconnect,
+    subscribe,
+    isConnected,
+  }
+}
+
+// Hook-friendly WebSocket hook factory
+export function useAgentWebSocket(
+  agentId?: string,
+  eventTypes?: string[],
+  onMessage?: (message: WebSocketMessage) => void
+) {
+  const [isConnected, setIsConnected] = useState(false)
+  const connectionRef = useRef<AgentWebSocketConnection | null>(null)
+  const unsubscribersRef = useRef<(() => void)[]>([])
+
+  useEffect(() => {
+    if (!agentId) return
+
+    connectionRef.current = createAgentWebSocket(agentId, {
+      onConnect: () => setIsConnected(true),
+      onDisconnect: () => setIsConnected(false),
+    })
+
+    // Subscribe to specific event types
+    if (eventTypes && onMessage) {
+      eventTypes.forEach((eventType) => {
+        const unsub = connectionRef.current!.subscribe(eventType, onMessage)
+        unsubscribersRef.current.push(unsub)
+      })
+    }
+
+    connectionRef.current.connect()
+
+    return () => {
+      unsubscribersRef.current.forEach((unsub) => unsub())
+      unsubscribersRef.current = []
+      connectionRef.current?.disconnect()
+    }
+  }, [agentId, eventTypes?.join(','), onMessage])
+
+  return { isConnected, connection: connectionRef.current }
 }

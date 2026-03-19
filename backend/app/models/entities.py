@@ -240,3 +240,38 @@ class LiveReadinessSnapshot(Base):
     compliance_overdue_open: Mapped[int] = mapped_column(Integer, default=0)
     mirofish: Mapped[dict] = mapped_column(JSON)
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
+
+
+class AgentInstance(Base):
+    __tablename__ = "agent_instances"
+    __table_args__ = (
+        Index("ix_agent_instances_status_created", "status", "created_at"),
+        Index("ix_agent_instances_ticker_status", "ticker", "status"),
+    )
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    agent_name: Mapped[str] = mapped_column(String(64), index=True)
+    instance_id: Mapped[str] = mapped_column(String(128), unique=True, index=True)
+    status: Mapped[str] = mapped_column(String(32), default="pending")
+    task_id: Mapped[str | None] = mapped_column(String(128), nullable=True, index=True)
+    ticker: Mapped[str | None] = mapped_column(String(16), nullable=True, index=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
+    updated_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
+    health_score: Mapped[float | None] = mapped_column(Float, nullable=True)
+    error_count: Mapped[int] = mapped_column(Integer, default=0)
+    last_output: Mapped[str | None] = mapped_column(Text, nullable=True)
+
+
+class AgentLog(Base):
+    __tablename__ = "agent_logs"
+    __table_args__ = (
+        Index("ix_agent_logs_instance_created", "instance_id", "created_at"),
+        Index("ix_agent_logs_level_created", "level", "created_at"),
+    )
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    instance_id: Mapped[str] = mapped_column(String(128), index=True)
+    level: Mapped[str] = mapped_column(String(16), default="info")
+    message: Mapped[str] = mapped_column(Text)
+    context: Mapped[dict | None] = mapped_column(JSON, nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
