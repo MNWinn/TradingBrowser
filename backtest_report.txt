@@ -1,0 +1,67 @@
+================================================================================
+COMPREHENSIVE MULTI-STRATEGY BACKTEST REPORT
+TradingBrowser Quantitative Research
+================================================================================
+
+Report Generated: 2026-03-19 22:09:30
+Total Strategies Tested: 60
+Total Configurations: 8640
+Strategies Passing Robustness: 0
+
+================================================================================
+TOP 10 STRATEGIES (Passing All Robustness Tests)
+================================================================================
+
+================================================================================
+STRATEGY CATEGORY PERFORMANCE SUMMARY
+================================================================================
+
+TREND_FOLLOWING
+  Configurations: 3312
+  Passing Robustness: 0 (0.0%)
+  Avg Score: -142.1
+  Avg Return: -0.0%
+  Avg Sharpe: -0.58
+
+MEAN_REVERSION
+  Configurations: 2592
+  Passing Robustness: 0 (0.0%)
+  Avg Score: -107.3
+  Avg Return: 0.0%
+  Avg Sharpe: -1.91
+
+MOMENTUM
+  Configurations: 1008
+  Passing Robustness: 0 (0.0%)
+  Avg Score: -29.0
+  Avg Return: 0.1%
+  Avg Sharpe: -0.42
+
+VOLATILITY
+  Configurations: 864
+  Passing Robustness: 0 (0.0%)
+  Avg Score: 12.9
+  Avg Return: 0.2%
+  Avg Sharpe: 7.88
+
+COMBINED
+  Configurations: 864
+  Passing Robustness: 0 (0.0%)
+  Avg Score: -385.2
+  Avg Return: -0.1%
+  Avg Sharpe: -0.25
+
+================================================================================
+ROBUSTNESS TEST CRITERIA
+================================================================================
+
+  min_trades: 30
+  min_win_rate: 0.45
+  max_drawdown: 0.2
+  min_sharpe: 0.5
+  min_profit_factor: 1.2
+  min_walk_forward_efficiency: 0.5
+
+================================================================================
+END OF REPORT
+================================================================================
