@@ -523,3 +523,99 @@ async def mirofish_diagnostics(payload: dict | None = None) -> dict:
             "checks": checks,
             "recommendations": ["Inspect MiroFish connectivity and backend logs"],
         }
+
+
+# Advanced Layer Integration Functions
+
+async def mirofish_fleet_analysis(
+    ticker: str,
+    timeframes: list[str] | None = None,
+    lenses: list[str] | None = None,
+    aggregation_method: str = "weighted",
+) -> dict:
+    """
+    Run comprehensive fleet analysis with multi-timeframe, multi-lens assessment.
+    
+    This uses the advanced MiroFish Fleet layer for sophisticated analysis.
+    """
+    return await fleet_analyze(
+        ticker=ticker,
+        timeframes=timeframes,
+        lenses=lenses,
+        aggregation_method=aggregation_method,
+    )
+
+
+async def mirofish_cached_predict(
+    ticker: str,
+    timeframe: str = "5m",
+    lens: str = "overall",
+    force_refresh: bool = False,
+) -> dict:
+    """
+    Get MiroFish prediction with caching support.
+    
+    Uses Redis-backed caching for improved performance.
+    """
+    cache = get_cache()
+    
+    async def fetch():
+        return await mirofish_predict({
+            "ticker": ticker,
+            "timeframe": timeframe,
+            "lens": lens,
+        })
+    
+    return await cache.get_or_fetch(
+        ticker=ticker,
+        timeframe=timeframe,
+        lens=lens,
+        fetch_func=fetch,
+        force_refresh=force_refresh,
+    )
+
+
+async def mirofish_ensemble_decision(
+    ticker: str,
+    include_deep_analysis: bool = True,
+    market_regime: str | None = None,
+) -> dict:
+    """
+    Generate ensemble decision combining MiroFish with other signals.
+    
+    Uses the ensemble layer for weighted decision making.
+    """
+    ensemble = get_ensemble()
+    result = await ensemble.ensemble_decision(
+        ticker=ticker,
+        include_mirofish_deep=include_deep_analysis,
+        market_regime=market_regime,
+    )
+    return result.to_dict()
+
+
+async def mirofish_advanced_status() -> dict:
+    """
+    Get status of the advanced MiroFish integration layer.
+    """
+    cache = get_cache()
+    ensemble = get_ensemble()
+    
+    cache_stats = await cache.get_stats()
+    accuracy_report = ensemble.get_accuracy_report()
+    
+    return {
+        "basic_layer": mirofish_status(),
+        "advanced_layer": {
+            "fleet_available": True,
+            "cache_available": cache_stats["redis"].get("connected", False),
+            "ensemble_available": True,
+            "cache_stats": cache_stats,
+            "ensemble_accuracy": accuracy_report,
+        },
+        "integrations": {
+            "cached_predictions": True,
+            "fleet_analysis": True,
+            "ensemble_decisions": True,
+        },
+    }

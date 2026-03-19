@@ -28,6 +28,7 @@ from app.routers import (
     journal,
     settings as settings_router,
     compliance,
+    practice,
 )
 from app.services.focus_runner import focus_runner_loop
 from app.services.market_data import (
@@ -69,6 +70,7 @@ app.include_router(audit.router)
 app.include_router(journal.router)
 app.include_router(settings_router.router)
 app.include_router(compliance.router)
+app.include_router(practice.router)
 
 
 @app.on_event("startup")

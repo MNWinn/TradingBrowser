@@ -95,6 +95,167 @@ class SwarmConsensusOutput(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
 
 
+class PracticePortfolio(Base):
+    """Virtual portfolio for paper trading."""
+    __tablename__ = "practice_portfolios"
+    __table_args__ = (
+        UniqueConstraint("user_id", name="uq_practice_portfolio_user"),
+        Index("ix_practice_portfolio_user", "user_id"),
+    )
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    user_id: Mapped[str] = mapped_column(String(64), index=True)
+    initial_balance: Mapped[float] = mapped_column(Float, default=100000.0)
+    cash_balance: Mapped[float] = mapped_column(Float, default=100000.0)
+    total_equity: Mapped[float] = mapped_column(Float, default=100000.0)
+    total_pnl: Mapped[float] = mapped_column(Float, default=0.0)
+    total_pnl_percent: Mapped[float] = mapped_column(Float, default=0.0)
+    positions_count: Mapped[int] = mapped_column(Integer, default=0)
+    config: Mapped[dict | None] = mapped_column(JSON, nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
+    updated_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+
+class PracticePosition(Base):
+    """Virtual position in paper trading."""
+    __tablename__ = "practice_positions"
+    __table_args__ = (
+        UniqueConstraint("portfolio_id", "ticker", name="uq_practice_position_portfolio_ticker"),
+        Index("ix_practice_position_portfolio", "portfolio_id"),
+        Index("ix_practice_position_ticker", "ticker"),
+    )
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    portfolio_id: Mapped[int] = mapped_column(Integer, index=True)
+    ticker: Mapped[str] = mapped_column(String(16), index=True)
+    side: Mapped[str] = mapped_column(String(8), default="long")  # long, short
+    quantity: Mapped[float] = mapped_column(Float, default=0.0)
+    avg_entry_price: Mapped[float] = mapped_column(Float, default=0.0)
+    current_price: Mapped[float] = mapped_column(Float, default=0.0)
+    market_value: Mapped[float] = mapped_column(Float, default=0.0)
+    unrealized_pnl: Mapped[float] = mapped_column(Float, default=0.0)
+    realized_pnl: Mapped[float] = mapped_column(Float, default=0.0)
+    opened_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
+    updated_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+
+class PracticeTrade(Base):
+    """Paper trade execution record."""
+    __tablename__ = "practice_trades"
+    __table_args__ = (
+        Index("ix_practice_trade_user", "user_id"),
+        Index("ix_practice_trade_ticker", "ticker"),
+        Index("ix_practice_trade_strategy", "strategy_id"),
+        Index("ix_practice_trade_created", "created_at"),
+    )
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    trade_id: Mapped[str] = mapped_column(String(64), unique=True, index=True)
+    user_id: Mapped[str] = mapped_column(String(64), index=True)
+    ticker: Mapped[str] = mapped_column(String(16), index=True)
+    side: Mapped[str] = mapped_column(String(8))  # buy, sell
+    quantity: Mapped[float] = mapped_column(Float)
+    price: Mapped[float] = mapped_column(Float)
+    total_cost: Mapped[float] = mapped_column(Float)
+    commission: Mapped[float] = mapped_column(Float, default=0.0)
+    slippage: Mapped[float] = mapped_column(Float, default=0.0)
+    status: Mapped[str] = mapped_column(String(16), default="filled")  # pending, filled, partial, cancelled, rejected
+    strategy_id: Mapped[str | None] = mapped_column(String(64), nullable=True, index=True)
+    rationale: Mapped[dict | None] = mapped_column(JSON, nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
+    filled_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
+
+
+class PracticePerformance(Base):
+    """Practice trading performance metrics."""
+    __tablename__ = "practice_performance"
+    __table_args__ = (
+        Index("ix_practice_perf_user", "user_id"),
+        Index("ix_practice_perf_strategy", "strategy_id"),
+        Index("ix_practice_perf_date", "date"),
+    )
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    user_id: Mapped[str] = mapped_column(String(64), index=True)
+    strategy_id: Mapped[str | None] = mapped_column(String(64), nullable=True, index=True)
+    date: Mapped[date] = mapped_column(Date)
+    total_trades: Mapped[int] = mapped_column(Integer, default=0)
+    winning_trades: Mapped[int] = mapped_column(Integer, default=0)
+    losing_trades: Mapped[int] = mapped_column(Integer, default=0)
+    total_pnl: Mapped[float] = mapped_column(Float, default=0.0)
+    win_rate: Mapped[float] = mapped_column(Float, default=0.0)
+    sharpe_ratio: Mapped[float | None] = mapped_column(Float, nullable=True)
+    max_drawdown_percent: Mapped[float | None] = mapped_column(Float, nullable=True)
+    profit_factor: Mapped[float | None] = mapped_column(Float, nullable=True)
+    metrics: Mapped[dict | None] = mapped_column(JSON, nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
+    updated_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+
+class PracticeChallenge(Base):
+    """Trading challenge for practice mode."""
+    __tablename__ = "practice_challenges"
+    __table_args__ = (
+        Index("ix_practice_challenge_user", "user_id"),
+        Index("ix_practice_challenge_status", "status"),
+        Index("ix_practice_challenge_expires", "expires_at"),
+    )
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    challenge_id: Mapped[str] = mapped_column(String(64), unique=True, index=True)
+    user_id: Mapped[str] = mapped_column(String(64), index=True)
+    name: Mapped[str] = mapped_column(String(128))
+    description: Mapped[str] = mapped_column(Text)
+    challenge_type: Mapped[str] = mapped_column(String(32))  # daily, risk_management, consistency, profit_target, skill_based
+    criteria: Mapped[dict] = mapped_column(JSON)
+    reward_points: Mapped[int] = mapped_column(Integer, default=0)
+    status: Mapped[str] = mapped_column(String(16), default="active")  # active, completed, failed, expired
+    progress: Mapped[dict | None] = mapped_column(JSON, nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
+    expires_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
+    completed_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
+
+
+class PracticeAchievement(Base):
+    """Achievement earned in practice trading."""
+    __tablename__ = "practice_achievements"
+    __table_args__ = (
+        UniqueConstraint("user_id", "achievement_id", name="uq_practice_achievement_user_id"),
+        Index("ix_practice_achievement_user", "user_id"),
+    )
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    user_id: Mapped[str] = mapped_column(String(64), index=True)
+    achievement_id: Mapped[str] = mapped_column(String(64), index=True)
+    name: Mapped[str] = mapped_column(String(128))
+    description: Mapped[str] = mapped_column(Text)
+    tier: Mapped[str] = mapped_column(String(16))  # bronze, silver, gold, platinum, diamond
+    icon: Mapped[str] = mapped_column(String(8), default="🏆")
+    criteria_met: Mapped[dict | None] = mapped_column(JSON, nullable=True)
+    earned_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
+
+
+class PracticeUserStats(Base):
+    """Aggregated user statistics for practice trading."""
+    __tablename__ = "practice_user_stats"
+    __table_args__ = (
+        UniqueConstraint("user_id", name="uq_practice_user_stats_user"),
+        Index("ix_practice_user_stats_user", "user_id"),
+    )
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    user_id: Mapped[str] = mapped_column(String(64), index=True)
+    total_points: Mapped[int] = mapped_column(Integer, default=0)
+    total_trades: Mapped[int] = mapped_column(Integer, default=0)
+    total_challenges_completed: Mapped[int] = mapped_column(Integer, default=0)
+    total_achievements_earned: Mapped[int] = mapped_column(Integer, default=0)
+    current_streak_days: Mapped[int] = mapped_column(Integer, default=0)
+    longest_streak_days: Mapped[int] = mapped_column(Integer, default=0)
+    favorite_strategy: Mapped[str | None] = mapped_column(String(64), nullable=True)
+    stats: Mapped[dict | None] = mapped_column(JSON, nullable=True)
+    updated_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+
 class PaperOrder(Base):
     __tablename__ = "paper_orders"
 
