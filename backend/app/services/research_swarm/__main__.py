@@ -45,26 +45,79 @@ if project_root not in sys.path:
 if backend_root not in sys.path:
     sys.path.insert(0, backend_root)
 
-from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker, Session
+from sqlalchemy import create_engine, Column, Integer, String, Float, DateTime, JSON, Text
+from sqlalchemy.orm import sessionmaker, Session, declarative_base
 
 # Import agents - try both import styles
 try:
     from app.services.agents.technical_analysis import technical_analysis_agent
     from app.services.agents.regime_detection import regime_detection_agent
     from app.services.market_data import get_bars_snapshot, get_quote_snapshot
-    from app.models.entities import FeatureSnapshot, SignalOutput, SwarmTask, SwarmAgentRun, SwarmConsensusOutput
-    from app.models.entities import Base
 except ImportError:
     # Fallback for when running as module
     from backend.app.services.agents.technical_analysis import technical_analysis_agent
     from backend.app.services.agents.regime_detection import regime_detection_agent
     from backend.app.services.market_data import get_bars_snapshot, get_quote_snapshot
-    from backend.app.models.entities import FeatureSnapshot, SignalOutput, SwarmTask, SwarmAgentRun, SwarmConsensusOutput
-    from backend.app.models.entities import Base
 
 # Database configuration - using SQLite as specified
 DATABASE_URL = "sqlite:///./research_swarm.db"
+
+# Create base for models
+Base = declarative_base()
+
+
+class FeatureSnapshot(Base):
+    """Feature snapshot model for SQLite."""
+    __tablename__ = "feature_snapshots"
+    
+    id = Column(Integer, primary_key=True)
+    ticker = Column(String(16), index=True)
+    ts = Column(DateTime, default=datetime.utcnow)
+    features = Column(JSON)
+    regime = Column(String(32), nullable=True)
+
+
+class SignalOutput(Base):
+    """Signal output model for SQLite."""
+    __tablename__ = "signal_outputs"
+    
+    id = Column(Integer, primary_key=True)
+    ticker = Column(String(16), index=True)
+    action = Column(String(16))
+    confidence = Column(Float)
+    consensus_score = Column(Float)
+    disagreement_score = Column(Float)
+    reason_codes = Column(JSON)
+    explanation = Column(Text)
+    execution_eligibility = Column(JSON)
+    model_version = Column(String(64), nullable=True)
+    created_at = Column(DateTime, default=datetime.utcnow)
+
+
+class SwarmTask(Base):
+    """Swarm task model for SQLite."""
+    __tablename__ = "swarm_tasks"
+    
+    id = Column(Integer, primary_key=True)
+    task_id = Column(String(128), unique=True, index=True)
+    ticker = Column(String(16), index=True)
+    mode = Column(String(16))
+    status = Column(String(16), default="completed")
+    started_at = Column(DateTime, nullable=True)
+    completed_at = Column(DateTime, nullable=True)
+
+
+class SwarmAgentRun(Base):
+    """Swarm agent run model for SQLite."""
+    __tablename__ = "swarm_agent_runs"
+    
+    id = Column(Integer, primary_key=True)
+    task_id = Column(String(128), index=True)
+    agent_name = Column(String(64), index=True)
+    recommendation = Column(String(16), nullable=True)
+    confidence = Column(Float, nullable=True)
+    latency_ms = Column(Integer, nullable=True)
+    output = Column(JSON)
 
 
 class ResearchSwarm:
@@ -514,8 +567,6 @@ class ResearchSwarm:
         """Get swarm statistics."""
         db = self.get_db()
         try:
-            from sqlalchemy import func
-            
             # Count feature snapshots
             feature_count = db.query(FeatureSnapshot).count()
             
