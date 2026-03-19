@@ -334,3 +334,29 @@ def normalize_alpaca_ws_event(event: dict[str, Any], last_price: dict[str, float
         "source": f"alpaca_ws_{market_feed()}",
         "simulated": False,
     }
+
+
+class MarketDataService:
+    """Service class for market data operations.
+    
+    Wraps the existing market data functions for use in practice strategies.
+    """
+    
+    async def get_latest_price(self, ticker: str) -> dict:
+        """Get latest price for a ticker."""
+        quote = get_quote_snapshot(ticker)
+        return {
+            "ticker": ticker,
+            "price": quote.get("price", 0.0),
+            "bid": quote.get("bid", 0.0),
+            "ask": quote.get("ask", 0.0),
+            "timestamp": datetime.now(timezone.utc).isoformat(),
+        }
+    
+    async def get_bars(self, ticker: str, timeframe: str = "5m", limit: int = 100) -> dict:
+        """Get historical bars for a ticker."""
+        return get_bars_snapshot(ticker, timeframe, limit)
+    
+    async def get_quote(self, ticker: str) -> dict:
+        """Get current quote for a ticker."""
+        return get_quote_snapshot(ticker)

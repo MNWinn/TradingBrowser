@@ -16,7 +16,7 @@ from typing import Any, Callable
 import httpx
 
 from app.core.config import settings
-from app.services.mirofish import mirofish_predict, mirofish_deep_swarm
+from app.services.mirofish_service import mirofish_predict, mirofish_deep_swarm
 from app.services.market_data import MarketDataService
 
 

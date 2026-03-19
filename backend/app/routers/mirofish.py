@@ -2,14 +2,14 @@ from fastapi import APIRouter, HTTPException
 from datetime import datetime, timezone
 
 from app.services.mirofish_service import (
+    mirofish_advanced_status,
+    mirofish_cached_predict,
     mirofish_deep_swarm,
     mirofish_diagnostics,
+    mirofish_ensemble_decision,
+    mirofish_fleet_analysis,
     mirofish_predict,
     mirofish_status,
-    mirofish_fleet_analysis,
-    mirofish_cached_predict,
-    mirofish_ensemble_decision,
-    mirofish_advanced_status,
 )
 from app.services.mirofish.mirofish_practice import (
     get_practice,
@@ -86,7 +86,7 @@ async def fleet_quick(payload: dict):
     - ticker: str (required)
     - timeframes: list[str] (optional, default: ["5m", "15m", "1h"])
     """
-    from app.services.mirofish import fleet_quick
+    from app.services.mirofish.mirofish_fleet import fleet_quick
     
     ticker = payload.get("ticker")
     if not ticker:
@@ -107,7 +107,7 @@ async def fleet_deep(payload: dict):
     Request body:
     - ticker: str (required)
     """
-    from app.services.mirofish import fleet_deep
+    from app.services.mirofish.mirofish_fleet import fleet_deep
     
     ticker = payload.get("ticker")
     if not ticker:
@@ -149,7 +149,7 @@ async def cache_invalidate(payload: dict):
     - timeframe: str (optional) - invalidate specific timeframe
     - lens: str (optional) - invalidate specific lens
     """
-    from app.services.mirofish import invalidate_ticker_cache
+    from app.services.mirofish.mirofish_cache import invalidate_ticker_cache
     
     ticker = payload.get("ticker")
     
@@ -166,7 +166,7 @@ async def cache_invalidate(payload: dict):
 @router.get("/cache/stats")
 async def cache_stats():
     """Get cache statistics."""
-    from app.services.mirofish import get_cache_stats
+    from app.services.mirofish.mirofish_cache import get_cache_stats
     return await get_cache_stats()
 
 
@@ -194,7 +194,7 @@ async def ensemble_decision(payload: dict):
 @router.get("/ensemble/accuracy")
 async def ensemble_accuracy():
     """Get ensemble accuracy tracking report."""
-    from app.services.mirofish import get_ensemble
+    from app.services.mirofish.mirofish_ensemble import get_ensemble
     ensemble = get_ensemble()
     return ensemble.get_accuracy_report()
 
@@ -212,7 +212,7 @@ async def explain_prediction(prediction_id: str):
     - Confidence breakdown by component
     - Contradicting signals detection
     """
-    from app.services.mirofish import get_explanation
+    from app.services.mirofish.mirofish_explainer import get_explanation
     
     explanation = await get_explanation(prediction_id)
     if not explanation:
@@ -234,7 +234,7 @@ async def generate_explanation(payload: dict):
     - lens: str (optional, default: "overall")
     - market_regime: str (optional) - "bull", "bear", or "range"
     """
-    from app.services.mirofish import explain_prediction
+    from app.services.mirofish.mirofish_explainer import explain_prediction
     
     prediction_id = payload.get("prediction_id")
     ticker = payload.get("ticker")
@@ -271,7 +271,7 @@ async def get_scenarios(ticker: str, current_price: float | None = None, timefra
     - Probability distribution of outcomes
     - Risk/reward analysis
     """
-    from app.services.mirofish import analyze_scenarios
+    from app.services.mirofish.mirofish_scenarios import analyze_scenarios
     
     if not current_price:
         # Try to get current price from prediction
@@ -296,7 +296,7 @@ async def monte_carlo_simulation(payload: dict):
     - num_simulations: int (optional, default: 1000)
     - timeframe: str (optional, default: "5m")
     """
-    from app.services.mirofish import run_monte_carlo
+    from app.services.mirofish.mirofish_scenarios import run_monte_carlo
     
     ticker = payload.get("ticker")
     current_price = payload.get("current_price")
@@ -331,7 +331,7 @@ async def run_backtest(payload: dict):
     - max_holding_days: int (default: 5)
     - use_deep_swarm: bool (default: false)
     """
-    from app.services.mirofish import run_backtest as backtest_run
+    from app.services.mirofish.mirofish_backtest import run_backtest as backtest_run
     
     ticker = payload.get("ticker")
     historical_data = payload.get("historical_data")
@@ -364,7 +364,7 @@ async def optimize_backtest(payload: dict):
         "take_profit_pct": [0.08, 0.10, 0.15]
     }
     """
-    from app.services.mirofish import optimize_parameters
+    from app.services.mirofish.mirofish_backtest import optimize_parameters
     
     ticker = payload.get("ticker")
     historical_data = payload.get("historical_data")
@@ -391,7 +391,7 @@ async def walk_forward_analysis(payload: dict):
     - test_size: int (optional, default: 20) - bars for testing
     - config: dict (optional) - base configuration
     """
-    from app.services.mirofish import walk_forward_analysis as wfa
+    from app.services.mirofish.mirofish_backtest import walk_forward_analysis as wfa
     
     ticker = payload.get("ticker")
     historical_data = payload.get("historical_data")
@@ -429,7 +429,7 @@ async def compare_signals(
     - Consensus bias and confidence
     - Accuracy ranking of sources
     """
-    from app.services.mirofish import compare_signals as compare
+    from app.services.mirofish.mirofish_comparison import compare_signals as compare
     
     include_sources = None
     if sources:
@@ -449,7 +449,7 @@ async def get_accuracy_ranking(ticker: str):
     
     Returns historical accuracy data for MiroFish vs other sources.
     """
-    from app.services.mirofish import get_accuracy_ranking as get_ranking
+    from app.services.mirofish.mirofish_comparison import get_accuracy_ranking as get_ranking
     
     return {
         "ticker": ticker.upper(),
@@ -472,7 +472,7 @@ async def record_outcome(payload: dict):
     - resolution_price: float (required) - price when resolved
     - holding_days: int (optional, default: 5)
     """
-    from app.services.mirofish import record_prediction_outcome
+    from app.services.mirofish.mirofish_comparison import record_prediction_outcome
     
     required = ["prediction_id", "ticker", "source", "predicted_bias", 
                 "predicted_confidence", "actual_return", "resolution_price"]

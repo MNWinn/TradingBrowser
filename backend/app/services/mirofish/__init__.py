@@ -259,6 +259,8 @@ __all__ = [
     "record_prediction_outcome",
 ]
 
+# Use: from app.services.mirofish_service import mirofish_predict, etc.
+
 # Analytics
 from app.services.mirofish.analytics import (
     MiroFishAnalytics,

@@ -27,7 +27,7 @@ from app.services.audit import log_event
 from app.services.execution import AdapterFactory
 from app.services.orders import apply_fill_update
 from app.services.compliance import record_violation
-from app.services.mirofish import mirofish_diagnostics
+from app.services.mirofish_service import mirofish_diagnostics
 from app.services.policy import (
     get_or_create_risk_policy,
     get_runtime_mode,
