@@ -7,6 +7,10 @@ This package provides advanced MiroFish integration capabilities:
 - **mirofish_cache**: Redis-based caching with TTL management
 - **mirofish_ensemble**: Ensemble decision making with other agents
 - **mirofish_practice**: Paper trading practice mode
+- **mirofish_explainer**: Prediction explainability and breakdown
+- **mirofish_scenarios**: Scenario analysis and what-if simulations
+- **mirofish_backtest**: Historical backtesting of signals
+- **mirofish_comparison**: Compare signals with other sources
 
 Usage:
     from app.services.mirofish import (
@@ -14,9 +18,17 @@ Usage:
         get_cache,
         get_ensemble,
         get_practice,
+        get_explainer,
+        get_scenario_analyzer,
+        get_backtester,
+        get_comparator,
         fleet_analyze,
         cached_assessment,
         ensemble_decision,
+        explain_prediction,
+        analyze_scenarios,
+        run_backtest,
+        compare_signals,
     )
 """
 
@@ -79,6 +91,64 @@ from app.services.mirofish.mirofish_practice import (
     DEFAULT_CONFIGS,
 )
 
+# New Deep Dive modules
+from app.services.mirofish.mirofish_explainer import (
+    PredictionExplainer,
+    PredictionExplanation,
+    FactorComponent,
+    ContradictingSignal,
+    FactorType,
+    SignalStrength,
+    MiroFishExplanation,
+    MiroFishExplanationHistory,
+    get_explainer,
+    explain_prediction,
+    get_explanation,
+)
+
+from app.services.mirofish.mirofish_scenarios import (
+    ScenarioAnalyzer,
+    ScenarioAnalysis,
+    ScenarioOutcome,
+    RiskRewardAnalysis,
+    ProbabilityDistribution,
+    ScenarioType,
+    OutcomeLikelihood,
+    MiroFishScenario,
+    get_scenario_analyzer,
+    analyze_scenarios,
+    run_monte_carlo,
+)
+
+from app.services.mirofish.mirofish_backtest import (
+    MiroFishBacktester,
+    BacktestResult,
+    BacktestTrade,
+    TradeDirection as BacktestTradeDirection,
+    TradeStatus as BacktestTradeStatus,
+    MiroFishBacktest,
+    MiroFishBacktestConfig,
+    get_backtester,
+    run_backtest,
+    optimize_parameters,
+    walk_forward_analysis,
+)
+
+from app.services.mirofish.mirofish_comparison import (
+    SignalComparator,
+    ComprehensiveComparison,
+    SignalComparison,
+    SourceAccuracy,
+    SignalSourceType,
+    AgreementLevel,
+    MiroFishComparison,
+    MiroFishAccuracyTracking,
+    get_comparator,
+    compare_signals,
+    get_accuracy_ranking,
+    record_prediction_outcome,
+)
+
 __all__ = [
     # Fleet
     "MiroFishFleet",
@@ -134,4 +204,57 @@ __all__ = [
     "get_session_results",
     "get_available_configs",
     "DEFAULT_CONFIGS",
+    
+    # Explainer
+    "PredictionExplainer",
+    "PredictionExplanation",
+    "FactorComponent",
+    "ContradictingSignal",
+    "FactorType",
+    "SignalStrength",
+    "MiroFishExplanation",
+    "MiroFishExplanationHistory",
+    "get_explainer",
+    "explain_prediction",
+    "get_explanation",
+    
+    # Scenarios
+    "ScenarioAnalyzer",
+    "ScenarioAnalysis",
+    "ScenarioOutcome",
+    "RiskRewardAnalysis",
+    "ProbabilityDistribution",
+    "ScenarioType",
+    "OutcomeLikelihood",
+    "MiroFishScenario",
+    "get_scenario_analyzer",
+    "analyze_scenarios",
+    "run_monte_carlo",
+    
+    # Backtest
+    "MiroFishBacktester",
+    "BacktestResult",
+    "BacktestTrade",
+    "BacktestTradeDirection",
+    "BacktestTradeStatus",
+    "MiroFishBacktest",
+    "MiroFishBacktestConfig",
+    "get_backtester",
+    "run_backtest",
+    "optimize_parameters",
+    "walk_forward_analysis",
+    
+    # Comparison
+    "SignalComparator",
+    "ComprehensiveComparison",
+    "SignalComparison",
+    "SourceAccuracy",
+    "SignalSourceType",
+    "AgreementLevel",
+    "MiroFishComparison",
+    "MiroFishAccuracyTracking",
+    "get_comparator",
+    "compare_signals",
+    "get_accuracy_ranking",
+    "record_prediction_outcome",
 ]

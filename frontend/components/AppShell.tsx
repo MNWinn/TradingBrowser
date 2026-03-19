@@ -14,6 +14,7 @@ const NAV = [
   { href: '/strategy-lab', label: 'Strategy Lab' },
   { href: '/training', label: 'Training' },
   { href: '/compliance', label: 'Compliance' },
+  { href: '/mirofish-analytics', label: 'MiroFish Analytics' },
   { href: '/settings', label: 'Settings' },
   { href: '/journal', label: 'Journal' },
   { href: '/live-control', label: 'Live Control' },
