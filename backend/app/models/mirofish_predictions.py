@@ -34,9 +34,9 @@ class MiroFishPrediction(Base):
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
     ticker: Mapped[str] = mapped_column(String(16), index=True)
-    signal_type: Mapped[str] = mapped_column(String(16), index=True)  # LONG, SHORT, NEUTRAL, etc.
+    signal_type: Mapped[str] = mapped_column(String(16))  # LONG, SHORT, NEUTRAL, etc.
     confidence: Mapped[float] = mapped_column(Float)
-    timeframe: Mapped[str] = mapped_column(String(16), index=True)  # 5m, 1h, 1d, etc.
+    timeframe: Mapped[str] = mapped_column(String(16))  # 5m, 1h, 1d, etc.
     lens: Mapped[str] = mapped_column(String(32), default="overall")  # trend, momentum, catalyst, etc.
     prediction_metadata: Mapped[dict] = mapped_column(JSON, default=dict)
     price_at_prediction: Mapped[float | None] = mapped_column(Float, nullable=True)
@@ -47,7 +47,6 @@ class MiroFishPrediction(Base):
     
     # Outcome reference
     outcome_id: Mapped[int | None] = mapped_column(Integer, ForeignKey("mirofish_prediction_outcomes.id"), nullable=True)
-    outcome: Mapped["PredictionOutcome"] = relationship("PredictionOutcome", back_populates="prediction", uselist=False)
 
 
 class PredictionOutcome(Base):
@@ -70,8 +69,8 @@ class PredictionOutcome(Base):
     was_correct: Mapped[bool] = mapped_column(Boolean, index=True)
     prediction_metadata: Mapped[dict] = mapped_column(JSON, default=dict)
     
-    # Relationship
-    prediction: Mapped[MiroFishPrediction] = relationship("MiroFishPrediction", back_populates="outcome")
+    # Relationship back to prediction
+    prediction: Mapped["MiroFishPrediction"] = relationship("MiroFishPrediction", foreign_keys="PredictionOutcome.prediction_id")
 
 
 class MiroFishAccuracySummary(Base):

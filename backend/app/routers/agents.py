@@ -18,6 +18,67 @@ from app.services.audit import log_event
 
 router = APIRouter(prefix="/agents", tags=["agents"])
 
+# Define all 8 agents with MiroFish integration
+MIROFISH_AGENTS = [
+    {
+        "agent_name": "mirofish_assessment",
+        "description": "Primary MiroFish agent for deep multi-timeframe analysis",
+        "has_mirofish_integration": True,
+        "integration_type": "primary",
+        "specialization": "deep_narrative_analysis",
+    },
+    {
+        "agent_name": "technical_analysis",
+        "description": "Technical analysis with MiroFish signal confirmation",
+        "has_mirofish_integration": True,
+        "integration_type": "enhanced",
+        "specialization": "technical_analysis_with_mirofish",
+    },
+    {
+        "agent_name": "market_scanner",
+        "description": "Market-wide scanning with MiroFish signal filtering",
+        "has_mirofish_integration": True,
+        "integration_type": "enhanced",
+        "specialization": "market_scanning_with_mirofish",
+    },
+    {
+        "agent_name": "pattern_recognition",
+        "description": "Chart pattern detection with MiroFish context validation",
+        "has_mirofish_integration": True,
+        "integration_type": "enhanced",
+        "specialization": "pattern_analysis_with_mirofish",
+    },
+    {
+        "agent_name": "momentum",
+        "description": "Momentum analysis with MiroFish confirmation",
+        "has_mirofish_integration": True,
+        "integration_type": "enhanced",
+        "specialization": "momentum_analysis_with_mirofish",
+    },
+    {
+        "agent_name": "support_resistance",
+        "description": "Support/Resistance levels with MiroFish validation",
+        "has_mirofish_integration": True,
+        "integration_type": "enhanced",
+        "specialization": "sr_analysis_with_mirofish",
+    },
+    {
+        "agent_name": "volume_profile",
+        "description": "Volume profile analysis with MiroFish volume validation",
+        "has_mirofish_integration": True,
+        "integration_type": "enhanced",
+        "specialization": "volume_analysis_with_mirofish",
+    },
+    {
+        "agent_name": "regime_detection",
+        "description": "Market regime detection with MiroFish alignment",
+        "has_mirofish_integration": True,
+        "integration_type": "enhanced",
+        "specialization": "regime_detection_with_mirofish",
+    },
+]
+
+
 # WebSocket connection manager for real-time agent status updates
 class AgentWebSocketManager:
     """Manages WebSocket connections for agent status updates."""
@@ -73,6 +134,7 @@ def list_agents(
     List all agents with optional filtering by status and ticker.
     
     Returns a list of agent runs with their latest status and metadata.
+    Includes all 8 agents with MiroFish integration.
     """
     # Build query for agent runs
     query = select(SwarmAgentRun).order_by(desc(SwarmAgentRun.id))
@@ -96,12 +158,34 @@ def list_agents(
     agents_map = {}
     for run in agent_runs:
         if run.agent_name not in agents_map:
+            # Find agent metadata
+            agent_meta = next((a for a in MIROFISH_AGENTS if a["agent_name"] == run.agent_name), None)
+            
             agents_map[run.agent_name] = {
                 "agent_name": run.agent_name,
                 "latest_task_id": run.task_id,
                 "latest_recommendation": run.recommendation,
                 "latest_confidence": run.confidence,
                 "output_preview": run.output,
+                "has_mirofish_integration": agent_meta["has_mirofish_integration"] if agent_meta else False,
+                "integration_type": agent_meta["integration_type"] if agent_meta else None,
+                "specialization": agent_meta["specialization"] if agent_meta else None,
+            }
+    
+    # Add any agents that haven't run yet (from MIROFISH_AGENTS list)
+    for agent_meta in MIROFISH_AGENTS:
+        if agent_meta["agent_name"] not in agents_map:
+            agents_map[agent_meta["agent_name"]] = {
+                "agent_name": agent_meta["agent_name"],
+                "latest_task_id": None,
+                "latest_recommendation": None,
+                "latest_confidence": None,
+                "output_preview": None,
+                "has_mirofish_integration": agent_meta["has_mirofish_integration"],
+                "integration_type": agent_meta["integration_type"],
+                "specialization": agent_meta["specialization"],
+                "description": agent_meta["description"],
+                "status": "idle",
             }
     
     # Get performance stats for each agent
@@ -135,11 +219,65 @@ def list_agents(
     
     total = db.scalar(select(SwarmAgentRun.id).select_from(count_query.subquery()))
     
+    # Count agents with MiroFish integration
+    mirofish_agents = [a for a in items if a.get("has_mirofish_integration")]
+    
     return {
         "items": items,
-        "total": len(items) if items else 0,
+        "total": len(items),
         "limit": limit,
         "offset": offset,
+        "agents_with_mirofish": len(mirofish_agents),
+        "total_agents": len(MIROFISH_AGENTS),
+    }
+
+
+@router.get("/mirofish/status")
+def get_mirofish_swarm_status(
+    db: Session = Depends(get_db),
+):
+    """
+    Get the status of the MiroFish agent swarm.
+    
+    Returns information about all 8 agents and their MiroFish integration status.
+    """
+    # Get latest runs for each agent
+    latest_runs = {}
+    for agent_meta in MIROFISH_AGENTS:
+        run = db.scalar(
+            select(SwarmAgentRun)
+            .where(SwarmAgentRun.agent_name == agent_meta["agent_name"])
+            .order_by(desc(SwarmAgentRun.id))
+        )
+        if run:
+            latest_runs[agent_meta["agent_name"]] = run
+    
+    # Get consensus outputs
+    consensus_count = db.scalar(select(SwarmConsensusOutput.id).select_from(SwarmConsensusOutput)) or 0
+    
+    # Build status for each agent
+    agent_statuses = []
+    for agent_meta in MIROFISH_AGENTS:
+        run = latest_runs.get(agent_meta["agent_name"])
+        agent_statuses.append({
+            "agent_name": agent_meta["agent_name"],
+            "description": agent_meta["description"],
+            "has_mirofish_integration": agent_meta["has_mirofish_integration"],
+            "integration_type": agent_meta["integration_type"],
+            "specialization": agent_meta["specialization"],
+            "status": "active" if run else "idle",
+            "last_run": run.created_at.isoformat() if run else None,
+            "last_recommendation": run.recommendation if run else None,
+            "last_confidence": run.confidence if run else None,
+        })
+    
+    return {
+        "swarm_name": "MiroFish Agent Swarm",
+        "total_agents": len(MIROFISH_AGENTS),
+        "agents_with_mirofish": len([a for a in MIROFISH_AGENTS if a["has_mirofish_integration"]]),
+        "agents": agent_statuses,
+        "consensus_outputs": consensus_count,
+        "timestamp": datetime.now(timezone.utc).isoformat(),
     }
 
 
@@ -153,6 +291,9 @@ def get_agent(
     
     Includes performance statistics, recent runs, and aggregated metrics.
     """
+    # Get agent metadata
+    agent_meta = next((a for a in MIROFISH_AGENTS if a["agent_name"] == agent_id), None)
+    
     # Get agent performance stats
     stats = db.scalar(
         select(AgentPerformanceStat).where(AgentPerformanceStat.agent_name == agent_id)
@@ -166,7 +307,7 @@ def get_agent(
         .limit(50)
     ).all()
     
-    if not stats and not recent_runs:
+    if not stats and not recent_runs and not agent_meta:
         raise HTTPException(status_code=404, detail=f"Agent '{agent_id}' not found")
     
     # Get associated tasks
@@ -204,6 +345,10 @@ def get_agent(
     
     return {
         "agent_name": agent_id,
+        "description": agent_meta["description"] if agent_meta else None,
+        "has_mirofish_integration": agent_meta["has_mirofish_integration"] if agent_meta else False,
+        "integration_type": agent_meta["integration_type"] if agent_meta else None,
+        "specialization": agent_meta["specialization"] if agent_meta else None,
         "reliability_score": stats.reliability_score if stats else None,
         "performance_stats": stats.stats if stats else None,
         "setup_type": stats.setup_type if stats else None,
@@ -234,7 +379,9 @@ def get_agent_logs(
     exists = db.scalar(
         select(SwarmAgentRun.id).where(SwarmAgentRun.agent_name == agent_id).limit(1)
     )
-    if not exists:
+    agent_meta = next((a for a in MIROFISH_AGENTS if a["agent_name"] == agent_id), None)
+    
+    if not exists and not agent_meta:
         raise HTTPException(status_code=404, detail=f"Agent '{agent_id}' not found")
     
     # Get paginated agent runs as logs
@@ -281,6 +428,7 @@ def get_agent_logs(
     
     return {
         "agent_name": agent_id,
+        "has_mirofish_integration": agent_meta["has_mirofish_integration"] if agent_meta else False,
         "logs": logs,
         "pagination": {
             "total": total,
@@ -307,7 +455,9 @@ def get_agent_outputs(
     exists = db.scalar(
         select(SwarmAgentRun.id).where(SwarmAgentRun.agent_name == agent_id).limit(1)
     )
-    if not exists:
+    agent_meta = next((a for a in MIROFISH_AGENTS if a["agent_name"] == agent_id), None)
+    
+    if not exists and not agent_meta:
         raise HTTPException(status_code=404, detail=f"Agent '{agent_id}' not found")
     
     # Build query
@@ -361,6 +511,7 @@ def get_agent_outputs(
     
     return {
         "agent_name": agent_id,
+        "has_mirofish_integration": agent_meta["has_mirofish_integration"] if agent_meta else False,
         "outputs": outputs,
         "count": len(outputs),
     }
@@ -393,6 +544,7 @@ async def agents_websocket(websocket: WebSocket):
             "type": "connection_established",
             "timestamp": datetime.now(timezone.utc).isoformat(),
             "message": "Connected to agents WebSocket",
+            "mirofish_agents": [a["agent_name"] for a in MIROFISH_AGENTS],
         })
         
         # Keep connection alive and handle client messages
@@ -418,11 +570,10 @@ async def agents_websocket(websocket: WebSocket):
                 
                 elif data.get("action") == "get_status":
                     # Client requesting current status of all agents
-                    # This would typically query the database
                     await websocket.send_json({
                         "type": "status_response",
                         "timestamp": datetime.now(timezone.utc).isoformat(),
-                        "message": "Status query received - implement database query as needed",
+                        "mirofish_agents": MIROFISH_AGENTS,
                     })
                     
             except Exception as e:

@@ -1,0 +1,100 @@
+{
+  "simulation_date": "2026-03-19T21:07:06.299944",
+  "total_trades_simulated": 1000,
+  "strategies_tested": [
+    {
+      "name": "MiroFish",
+      "trades": 200,
+      "wins": 78,
+      "losses": 122,
+      "win_rate": 0.39,
+      "total_pnl": -230.3383461443483,
+      "avg_win": 16.79910268662323,
+      "avg_loss": -12.628429145089838,
+      "profit_factor": 0.8504945303172983,
+      "sharpe_ratio": -1.183804575517633,
+      "max_drawdown": 0.3698331764310351,
+      "avg_trade_pnl": -1.1516917307217414,
+      "daily_consistency": 0.6707317073170732
+    },
+    {
+      "name": "Technical",
+      "trades": 200,
+      "wins": 76,
+      "losses": 124,
+      "win_rate": 0.38,
+      "total_pnl": -208.11803070033977,
+      "avg_win": 17.653622268784446,
+      "avg_loss": -12.498333251031916,
+      "profit_factor": 0.86571239687606,
+      "sharpe_ratio": -1.0501528180531585,
+      "max_drawdown": 0.2191303444879541,
+      "avg_trade_pnl": -1.0405901535016988,
+      "daily_consistency": 0.5853658536585366
+    },
+    {
+      "name": "Mean Reversion",
+      "trades": 200,
+      "wins": 72,
+      "losses": 128,
+      "win_rate": 0.36,
+      "total_pnl": -246.12191929710397,
+      "avg_win": 18.11941812520268,
+      "avg_loss": -12.115000189935135,
+      "profit_factor": 0.8412853929539296,
+      "sharpe_ratio": -1.2503763844416425,
+      "max_drawdown": 0.30115762661727835,
+      "avg_trade_pnl": -1.23060959648552,
+      "daily_consistency": 0.5903614457831325
+    },
+    {
+      "name": "Momentum",
+      "trades": 200,
+      "wins": 83,
+      "losses": 117,
+      "win_rate": 0.415,
+      "total_pnl": 15.144744860690652,
+      "avg_win": 17.207322089486667,
+      "avg_loss": -12.077461440741049,
+      "profit_factor": 1.0107176714578399,
+      "sharpe_ratio": 0.0782996113037909,
+      "max_drawdown": 0.1632190777463538,
+      "avg_trade_pnl": 0.07572372430345325,
+      "daily_consistency": 0.6753246753246753
+    },
+    {
+      "name": "Consensus",
+      "trades": 200,
+      "wins": 88,
+      "losses": 112,
+      "win_rate": 0.44,
+      "total_pnl": 212.82082150651755,
+      "avg_win": 17.602124943155825,
+      "avg_loss": -11.9300551204571,
+      "profit_factor": 1.1592772109702867,
+      "sharpe_ratio": 1.0780588597125387,
+      "max_drawdown": 0.20787760020856075,
+      "avg_trade_pnl": 1.0641041075325877,
+      "daily_consistency": 0.7341772151898734
+    }
+  ],
+  "best_strategy": {
+    "name": "Consensus",
+    "trades": 200,
+    "wins": 88,
+    "losses": 112,
+    "win_rate": 0.44,
+    "total_pnl": 212.82082150651755,
+    "avg_win": 17.602124943155825,
+    "avg_loss": -11.9300551204571,
+    "profit_factor": 1.1592772109702867,
+    "sharpe_ratio": 1.0780588597125387,
+    "max_drawdown": 0.20787760020856075,
+    "avg_trade_pnl": 1.0641041075325877,
+    "daily_consistency": 0.7341772151898734
+  },
+  "lessons_learned": [
+    "Wins on 73% of days - good for daily discipline"
+  ],
+  "recommendation": "NEEDS_MORE_OPTIMIZATION"
+}
