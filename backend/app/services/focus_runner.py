@@ -3,7 +3,7 @@ from __future__ import annotations
 import asyncio
 
 from app.services.focus_runtime import mark_cycle, snapshot_for_runner, update_focus_result
-from app.services.mirofish import mirofish_deep_swarm
+from app.services.mirofish_service import mirofish_deep_swarm
 
 
 async def run_focus_cycle() -> dict:

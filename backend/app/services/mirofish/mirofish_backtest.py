@@ -20,7 +20,7 @@ from enum import Enum
 from sqlalchemy import Column, String, Float, DateTime, JSON, Integer, Boolean
 from app.core.database import Base, get_db
 
-from app.services.mirofish.mirofish_service import mirofish_predict, mirofish_deep_swarm
+from app.services.mirofish_service import mirofish_predict, mirofish_deep_swarm
 from app.services.mirofish.mirofish_fleet import DirectionalBias
 
 logger = logging.getLogger(__name__)
@@ -62,7 +62,7 @@ class MiroFishBacktest(Base):
     
     # Configuration
     config = Column(JSON, default=dict)
-    metadata = Column(JSON, default=dict)
+    prediction_metadata = Column(JSON, default=dict)
 
 
 class MiroFishBacktestConfig(Base):
@@ -87,7 +87,7 @@ class MiroFishBacktestConfig(Base):
     timeframes = Column(JSON, default=list)
     lenses = Column(JSON, default=list)
     
-    metadata = Column(JSON, default=dict)
+    prediction_metadata = Column(JSON, default=dict)
 
 
 class TradeDirection(Enum):

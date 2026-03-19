@@ -22,7 +22,7 @@ from sqlalchemy import Column, String, Float, DateTime, JSON, Integer
 from app.core.database import Base, get_db
 
 from app.services.mirofish.mirofish_fleet import DirectionalBias, get_fleet
-from app.services.mirofish.mirofish_service import mirofish_predict
+from app.services.mirofish_service import mirofish_predict
 
 logger = logging.getLogger(__name__)
 
@@ -52,7 +52,7 @@ class MiroFishScenario(Base):
     
     # Metadata
     timeframe = Column(String(10), nullable=True)
-    metadata = Column(JSON, default=dict)
+    prediction_metadata = Column(JSON, default=dict)
 
 
 class ScenarioType(Enum):

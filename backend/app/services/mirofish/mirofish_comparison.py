@@ -20,7 +20,7 @@ from enum import Enum
 from sqlalchemy import Column, String, Float, DateTime, JSON, Integer, Boolean
 from app.core.database import Base, get_db
 
-from app.services.mirofish.mirofish_service import mirofish_predict, mirofish_deep_swarm
+from app.services.mirofish_service import mirofish_predict, mirofish_deep_swarm
 from app.services.mirofish.mirofish_fleet import DirectionalBias
 from app.services.mirofish.mirofish_ensemble import SignalSource, Action
 
@@ -56,7 +56,7 @@ class MiroFishComparison(Base):
     
     # Metadata
     timeframe = Column(String(10), nullable=True)
-    metadata = Column(JSON, default=dict)
+    prediction_metadata = Column(JSON, default=dict)
 
 
 class MiroFishAccuracyTracking(Base):

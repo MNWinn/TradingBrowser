@@ -38,7 +38,7 @@ class MiroFishExplanation(Base):
     # Metadata
     timeframe = Column(String(10), nullable=True)
     lens = Column(String(50), nullable=True)
-    metadata = Column(JSON, default=dict)
+    prediction_metadata = Column(JSON, default=dict)
 
 
 class MiroFishExplanationHistory(Base):
@@ -80,7 +80,7 @@ class MiroFishScenario(Base):
     
     # Metadata
     timeframe = Column(String(10), nullable=True)
-    metadata = Column(JSON, default=dict)
+    prediction_metadata = Column(JSON, default=dict)
 
 
 class MiroFishBacktest(Base):
@@ -118,7 +118,7 @@ class MiroFishBacktest(Base):
     
     # Configuration
     config = Column(JSON, default=dict)
-    metadata = Column(JSON, default=dict)
+    prediction_metadata = Column(JSON, default=dict)
 
 
 class MiroFishBacktestConfig(Base):
@@ -143,7 +143,7 @@ class MiroFishBacktestConfig(Base):
     timeframes = Column(JSON, default=list)
     lenses = Column(JSON, default=list)
     
-    metadata = Column(JSON, default=dict)
+    prediction_metadata = Column(JSON, default=dict)
 
 
 class MiroFishComparison(Base):
@@ -174,7 +174,7 @@ class MiroFishComparison(Base):
     
     # Metadata
     timeframe = Column(String(10), nullable=True)
-    metadata = Column(JSON, default=dict)
+    prediction_metadata = Column(JSON, default=dict)
 
 
 class MiroFishAccuracyTracking(Base):

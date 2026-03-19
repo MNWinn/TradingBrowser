@@ -52,7 +52,7 @@ class MiroFishExplanation(Base):
     # Metadata
     timeframe = Column(String(10), nullable=True)
     lens = Column(String(50), nullable=True)
-    metadata = Column(JSON, default=dict)
+    prediction_metadata = Column(JSON, default=dict)
 
 
 class MiroFishExplanationHistory(Base):
