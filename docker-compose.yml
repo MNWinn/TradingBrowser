@@ -35,7 +35,7 @@ services:
       ALPACA_DATA_WS_IEX: ${ALPACA_DATA_WS_IEX:-wss://stream.data.alpaca.markets/v2/iex}
       ALPACA_DATA_WS_SIP: ${ALPACA_DATA_WS_SIP:-wss://stream.data.alpaca.markets/v2/sip}
       LIVE_TRADING_ENABLED: "false"
-      MIROFISH_BASE_URL: ${MIROFISH_BASE_URL:-}
+      MIROFISH_BASE_URL: ${MIROFISH_BASE_URL:-http://host.docker.internal:5001}
       MIROFISH_API_KEY: ${MIROFISH_API_KEY:-}
       MIROFISH_TIMEOUT_SEC: ${MIROFISH_TIMEOUT_SEC:-6.0}
       MIROFISH_SIMULATION_ID: ${MIROFISH_SIMULATION_ID:-}

@@ -102,17 +102,34 @@ async def _predict_via_direct_endpoint_verbose(client: httpx.AsyncClient, payloa
     return None, "/predict returned non-object payload"
 
 
-async def _resolve_simulation_id(client: httpx.AsyncClient) -> str | None:
-    if settings.mirofish_simulation_id:
-        return settings.mirofish_simulation_id
+def _is_startable_simulation_status(status: str | None) -> bool:
+    s = (status or "").lower()
+    return s in {"ready", "running", "completed"}
 
-    status_code, body = await _request_json(client, "GET", "/api/simulation/history?limit=1")
+
+async def _resolve_simulation_id(client: httpx.AsyncClient) -> str | None:
+    pinned = settings.mirofish_simulation_id
+    if pinned:
+        code, body = await _request_json(client, "GET", f"/api/simulation/{pinned}")
+        data = body.get("data") if code < 400 and isinstance(body, dict) else None
+        status = data.get("status") if isinstance(data, dict) else None
+        if _is_startable_simulation_status(status):
+            return pinned
+
+    status_code, body = await _request_json(client, "GET", "/api/simulation/history?limit=10")
     if status_code >= 400 or not isinstance(body, dict):
         return None
 
     items = body.get("data") or []
     if not items:
         return None
+
+    for item in items:
+        sim_id = item.get("simulation_id")
+        status = item.get("status")
+        if sim_id and _is_startable_simulation_status(status):
+            return sim_id
+
     return items[0].get("simulation_id")
 
 
@@ -184,6 +201,67 @@ async def _predict_via_oss_chat_bridge_verbose(client: httpx.AsyncClient, payloa
     }, None
 
 
+async def _predict_via_simulation_runtime_verbose(client: httpx.AsyncClient, payload: dict) -> tuple[dict | None, str | None]:
+    simulation_id = await _resolve_simulation_id(client)
+    if not simulation_id:
+        return None, "no simulation_id available for /api/simulation runtime bridge"
+
+    sim_code, sim_body = await _request_json(client, "GET", f"/api/simulation/{simulation_id}")
+    if sim_code >= 400:
+        return None, f"/api/simulation/{{id}} {sim_code}: {_body_error(sim_body)}"
+
+    sim_data = sim_body.get("data") if isinstance(sim_body, dict) else None
+    if not isinstance(sim_data, dict):
+        return None, "/api/simulation/{id} returned non-object payload"
+
+    sim_status = str(sim_data.get("status") or "")
+    if not _is_startable_simulation_status(sim_status):
+        start_code, start_body = await _request_json(client, "POST", "/api/simulation/start", {"simulation_id": simulation_id})
+        if start_code >= 400:
+            start_err = _body_error(start_body)
+            if "prepare" in start_err.lower() or "准备" in start_err:
+                prep_code, prep_body = await _request_json(client, "POST", "/api/simulation/prepare", {"simulation_id": simulation_id})
+                if prep_code < 400:
+                    return None, f"/api/simulation/start requires prepare; /api/simulation/prepare triggered for {simulation_id}"
+                return None, f"/api/simulation/start {start_code}: {start_err} | /api/simulation/prepare {prep_code}: {_body_error(prep_body)}"
+            return None, f"/api/simulation/start {start_code}: {start_err}"
+
+        sim_code, sim_body = await _request_json(client, "GET", f"/api/simulation/{simulation_id}")
+        if sim_code >= 400:
+            return None, f"/api/simulation/{{id}} {sim_code}: {_body_error(sim_body)}"
+        sim_data = sim_body.get("data") if isinstance(sim_body, dict) else None
+        if not isinstance(sim_data, dict):
+            return None, "/api/simulation/{id} returned non-object payload"
+
+    text = " ".join(
+        [
+            str(sim_data.get("config_reasoning") or ""),
+            str(sim_data.get("simulation_requirement") or payload.get("objective") or ""),
+        ]
+    ).strip()
+
+    bias, confidence = _extract_bias_from_text(text)
+    if bias == "NEUTRAL":
+        confidence = max(confidence, 0.52)
+
+    status = str(sim_data.get("status") or "unknown")
+    runner_status = str(sim_data.get("runner_status") or "unknown")
+
+    return {
+        "provider": "mirofish",
+        "provider_mode": "live_simulation_bridge",
+        "ticker": payload.get("ticker"),
+        "directional_bias": bias,
+        "confidence": round(float(confidence), 2),
+        "scenario_summary": (text[:700] or "Simulation metadata bridge response."),
+        "catalyst_summary": "Derived from MiroFish simulation configuration/runtime metadata",
+        "risk_flags": [f"simulation_status:{status}", f"runner_status:{runner_status}"],
+        "leaning": "TRADE" if bias in {"BULLISH", "BEARISH"} else "WAIT",
+        "simulation_id": simulation_id,
+        "timestamp": datetime.now(timezone.utc).isoformat(),
+    }, None
+
+
 async def _predict_with_client(client: httpx.AsyncClient, payload: dict) -> dict:
     errors: list[str] = []
 
@@ -198,6 +276,12 @@ async def _predict_with_client(client: httpx.AsyncClient, payload: dict) -> dict
         return bridged
     if bridge_error:
         errors.append(bridge_error)
+
+    sim_bridge, sim_bridge_error = await _predict_via_simulation_runtime_verbose(client, payload)
+    if sim_bridge:
+        return sim_bridge
+    if sim_bridge_error:
+        errors.append(sim_bridge_error)
 
     return {
         **_stub_response(payload, reason="mirofish_no_compatible_endpoint"),
@@ -387,6 +471,17 @@ async def mirofish_diagnostics(payload: dict | None = None) -> dict:
                 "detail": "chat bridge succeeded" if bridge else (bridge_error or "unknown"),
             })
 
+            sim_bridge, sim_bridge_error = await _predict_via_simulation_runtime_verbose(
+                client,
+                {"ticker": ticker, "timeframe": "5m", "objective": "diagnostics check"},
+            )
+            checks.append({
+                "name": "simulation_runtime_bridge",
+                "ok": bool(sim_bridge),
+                "status_code": 200 if sim_bridge else 500,
+                "detail": "simulation runtime bridge succeeded" if sim_bridge else (sim_bridge_error or "unknown"),
+            })
+
             predict = await _predict_with_client(client, {"ticker": ticker, "timeframe": "5m"})
             provider_mode = predict.get("provider_mode", "unknown")
             verdict = "LIVE" if provider_mode.startswith("live") else "FALLBACK"
@@ -401,6 +496,8 @@ async def mirofish_diagnostics(payload: dict | None = None) -> dict:
                 recommendations.append("Fix /api/report/chat runtime dependency (quota/key/provider) until 200 responses return")
             if not any(c.get("name") == "simulation_history" and c.get("ok") for c in checks):
                 recommendations.append("Ensure /api/simulation/history returns at least one simulation_id")
+            if not any(c.get("name") == "simulation_runtime_bridge" and c.get("ok") for c in checks):
+                recommendations.append("Ensure /api/simulation/start and /api/simulation/{id} are callable from TradingBrowser backend")
 
             return {
                 **base,
