@@ -10,7 +10,7 @@ from datetime import datetime, timezone
 from typing import Any, Optional
 
 from app.services.agents.base import BaseAgent, AgentTask, AgentOutput, AgentStatus
-from app.services.mirofish import mirofish_deep_swarm, mirofish_predict
+from app.services.mirofish.mirofish_fleet import fleet_deep, fleet_quick
 from app.services.focus_runtime import is_focus_ticker
 from app.core.database import SessionLocal
 from app.models.entities import SwarmAgentRun
@@ -70,36 +70,20 @@ class MiroFishAssessmentAgent(BaseAgent):
         
         if deep_mode or is_focus:
             # Deep analysis with multiple timeframes and lenses
-            result = await mirofish_deep_swarm({
-                "ticker": ticker,
-                "timeframes": custom_timeframes or (self.timeframes if is_focus else ["5m", "15m", "1h", "1d"]),
-                "lenses": custom_lenses or (self.lenses if is_focus else ["trend", "momentum", "risk"]),
-                "focus_context": payload.get("focus_context", "priority" if is_focus else "")
-            })
+            fleet_result = await fleet_deep(
+                ticker=ticker,
+                timeframes=custom_timeframes or (self.timeframes if is_focus else ["5m", "15m", "1h", "1d"]),
+                lenses=custom_lenses or (self.lenses if is_focus else ["trend", "momentum", "risk"]),
+            )
+            result = fleet_result.to_dict()
         else:
             # Standard single analysis
-            result = await mirofish_predict({
-                "ticker": ticker,
-                "timeframe": payload.get("timeframe", "5m"),
-                "lens": payload.get("lens", "overall")
-            })
-            # Convert to deep format for consistency
-            result = {
-                "deep": False,
-                "ticker": ticker,
-                "overall_bias": result.get("directional_bias", "NEUTRAL"),
-                "overall_confidence": result.get("confidence", 0.5),
-                "analyses": [{
-                    "timeframe": payload.get("timeframe", "5m"),
-                    "lens": payload.get("lens", "overall"),
-                    "bias": result.get("directional_bias", "NEUTRAL"),
-                    "confidence": result.get("confidence", 0.5),
-                    "summary": result.get("scenario_summary", ""),
-                    "catalyst": result.get("catalyst_summary", ""),
-                    "risk_flags": result.get("risk_flags", []),
-                }],
-                "provider_mode": result.get("provider_mode", "unknown"),
-            }
+            fleet_result = await fleet_quick(
+                ticker=ticker,
+                timeframe=payload.get("timeframe", "5m"),
+                lens=payload.get("lens", "overall"),
+            )
+            result = fleet_result.to_dict()
 
         # Calculate enhanced confidence score
         confidence_data = self._calculate_confidence(result)
@@ -129,9 +113,9 @@ class MiroFishAssessmentAgent(BaseAgent):
 
     def _calculate_confidence(self, result: dict) -> dict:
         """Calculate comprehensive confidence score from MiroFish results."""
-        analyses = result.get("analyses", [])
+        assessments = result.get("assessments", [])
         
-        if not analyses:
+        if not assessments:
             return {
                 "overall_confidence": 0.5,
                 "alignment_score": 0.0,
@@ -139,17 +123,13 @@ class MiroFishAssessmentAgent(BaseAgent):
                 "timeframe_coverage": 0.0,
             }
         
-        # Alignment score - how many analyses agree
-        votes = {"BULLISH": 0, "BEARISH": 0, "NEUTRAL": 0}
-        for a in analyses:
-            bias = a.get("bias", "NEUTRAL")
-            votes[bias] = votes.get(bias, 0) + 1
+        # Use fleet analysis aggregated values
+        alignment_score = result.get("alignment_score", 0)
+        aggregated_confidence = result.get("aggregated_confidence", 0.5)
         
-        dominant_bias = max(votes, key=votes.get)
-        alignment_score = votes[dominant_bias] / len(analyses)
-        
-        # Source reliability based on provider mode
-        provider_mode = result.get("provider_mode", "unknown")
+        # Source reliability based on metadata
+        metadata = result.get("metadata", {})
+        provider_mode = metadata.get("provider_mode", "unknown")
         if provider_mode.startswith("live"):
             source_reliability = 0.9
         elif provider_mode == "stub":
@@ -158,12 +138,11 @@ class MiroFishAssessmentAgent(BaseAgent):
             source_reliability = 0.7
         
         # Timeframe coverage
-        timeframe_coverage = min(len(analyses) / 5, 1.0)  # Max at 5 timeframes
+        timeframe_coverage = min(len(assessments) / 5, 1.0)  # Max at 5 timeframes
         
         # Calculate overall confidence
-        base_confidence = result.get("overall_confidence", 0.5)
         overall_confidence = (
-            base_confidence * 0.4 +
+            aggregated_confidence * 0.4 +
             alignment_score * 0.3 +
             source_reliability * 0.2 +
             timeframe_coverage * 0.1
@@ -174,13 +153,12 @@ class MiroFishAssessmentAgent(BaseAgent):
             "alignment_score": round(alignment_score, 3),
             "source_reliability": round(source_reliability, 3),
             "timeframe_coverage": round(timeframe_coverage, 3),
-            "dominant_bias": dominant_bias,
-            "vote_distribution": votes,
+            "aggregated_bias": result.get("aggregated_bias", "UNKNOWN"),
         }
 
     def _determine_recommendation(self, result: dict, confidence_data: dict) -> str:
         """Determine trading recommendation from analysis."""
-        bias = result.get("overall_bias", "NEUTRAL")
+        bias = result.get("aggregated_bias", "NEUTRAL")
         confidence = confidence_data["overall_confidence"]
         alignment = confidence_data["alignment_score"]
         

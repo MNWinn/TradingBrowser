@@ -489,12 +489,276 @@ export async function getAgentOutputs(id: string, limit = 50): Promise<{ outputs
   return asJson(res)
 }
 
+// ==================== Fleet Types ====================
+
+export interface FleetStatus {
+  total_agents: number
+  running: number
+  idle: number
+  paused: number
+  error: number
+  stopped: number
+  health_score: number
+  last_updated: string
+}
+
+export interface AgentMessage {
+  from_agent: string
+  to_agent: string
+  message_type: string
+  payload: Record<string, any>
+  priority: number
+  ttl_seconds: number
+}
+
+export interface BatchOperationResult {
+  operation_id: string
+  command: string
+  total: number
+  succeeded: number
+  failed: number
+  results: Array<{
+    agent_name: string
+    success: boolean
+    status?: string
+    error?: string
+  }>
+  started_at: string
+  completed_at?: string
+}
+
+// ==================== Agent Fleet API ====================
+
+export async function getFleetStatus(): Promise<FleetStatus> {
+  const res = await fetch(`${API_BASE}/agent-fleet/status`, {
+    cache: 'no-store',
+    headers: { ...authHeaders('analyst') },
+  })
+  return asJson(res)
+}
+
+export async function bulkAgentOperation(payload: {
+  agent_names: string[]
+  command: 'start' | 'stop' | 'pause' | 'resume' | 'restart' | 'configure'
+  config?: any
+  reason?: string
+}): Promise<BatchOperationResult> {
+  const res = await fetch(`${API_BASE}/agent-fleet/bulk-operation`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...authHeaders('admin') },
+    body: JSON.stringify(payload),
+  })
+  return asJson(res)
+}
+
+export async function sendAgentMessage(payload: AgentMessage): Promise<{
+  message_id: string
+  status: string
+  timestamp: string
+}> {
+  const res = await fetch(`${API_BASE}/agent-fleet/message`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...authHeaders('trader') },
+    body: JSON.stringify(payload),
+  })
+  return asJson(res)
+}
+
+export async function broadcastToAgents(payload: {
+  sender: string
+  message_type: string
+  payload: Record<string, any>
+  target_tags?: string[]
+  exclude_agents?: string[]
+}): Promise<{
+  broadcast_id: string
+  sender: string
+  target_count: number
+  timestamp: string
+}> {
+  const res = await fetch(`${API_BASE}/agent-fleet/broadcast`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...authHeaders('admin') },
+    body: JSON.stringify(payload),
+  })
+  return asJson(res)
+}
+
+export async function getAgentMessages(
+  agentName: string,
+  direction: 'inbound' | 'outbound' | 'all' = 'inbound',
+  limit = 50
+): Promise<{
+  agent_name: string
+  direction: string
+  messages: Array<{
+    timestamp: string
+    level: string
+    message: string
+    context?: Record<string, any>
+  }>
+  count: number
+}> {
+  const res = await fetch(
+    `${API_BASE}/agent-fleet/messages/${agentName}?direction=${direction}&limit=${limit}`,
+    {
+      cache: 'no-store',
+      headers: { ...authHeaders('analyst') },
+    }
+  )
+  return asJson(res)
+}
+
+export async function getAgentGroups(): Promise<{
+  groups: Array<{
+    name: string
+    description?: string
+    agent_names: string[]
+    config: Record<string, any>
+  }>
+  count: number
+}> {
+  const res = await fetch(`${API_BASE}/agent-fleet/groups`, {
+    cache: 'no-store',
+    headers: { ...authHeaders('analyst') },
+  })
+  return asJson(res)
+}
+
+export async function operateOnGroup(
+  groupName: string,
+  operation: {
+    agent_names: string[]
+    command: 'start' | 'stop' | 'pause' | 'resume' | 'restart' | 'configure'
+    config?: any
+    reason?: string
+  }
+): Promise<BatchOperationResult> {
+  const res = await fetch(`${API_BASE}/agent-fleet/groups/${groupName}/operation`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...authHeaders('admin') },
+    body: JSON.stringify(operation),
+  })
+  return asJson(res)
+}
+
+export async function getAgentConfig(agentName: string): Promise<{
+  agent_name: string
+  instance_id: string
+  status: string
+  config: Record<string, any>
+  health_score?: number
+  error_count: number
+  updated_at?: string
+}> {
+  const res = await fetch(`${API_BASE}/agent-fleet/config/${agentName}`, {
+    cache: 'no-store',
+    headers: { ...authHeaders('analyst') },
+  })
+  return asJson(res)
+}
+
+export async function updateAgentConfig(
+  agentName: string,
+  config: {
+    agent_name: string
+    parameters?: Record<string, any>
+    enabled?: boolean
+    priority?: number
+    max_retries?: number
+    timeout_seconds?: number
+    tags?: string[]
+  }
+): Promise<{
+  agent_name: string
+  config: Record<string, any>
+  updated_at: string
+}> {
+  const res = await fetch(`${API_BASE}/agent-fleet/config/${agentName}`, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json', ...authHeaders('admin') },
+    body: JSON.stringify(config),
+  })
+  return asJson(res)
+}
+
+export async function applyConfigTemplate(
+  templateName: string,
+  targetAgents: string[]
+): Promise<{
+  template: string
+  applied_count: number
+  results: Array<{
+    agent_name: string
+    applied: boolean
+    error?: string
+  }>
+}> {
+  const res = await fetch(`${API_BASE}/agent-fleet/config/apply-template`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...authHeaders('admin') },
+    body: JSON.stringify({
+      template_name: templateName,
+      target_agents: targetAgents,
+    }),
+  })
+  return asJson(res)
+}
+
+export async function broadcastMarketEvent(
+  eventType: string,
+  payload: Record<string, any>
+): Promise<{
+  event_type: string
+  broadcasted: boolean
+  timestamp: string
+}> {
+  const res = await fetch(`${API_BASE}/agent-fleet/broadcast/market-event`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...authHeaders('admin') },
+    body: JSON.stringify({ event_type: eventType, payload }),
+  })
+  return asJson(res)
+}
+
+export async function broadcastTradingSignal(
+  signal: {
+    ticker: string
+    action: string
+    confidence: number
+    [key: string]: any
+  }
+): Promise<{
+  signal_broadcasted: boolean
+  ticker: string
+  timestamp: string
+}> {
+  const res = await fetch(`${API_BASE}/agent-fleet/broadcast/signal`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...authHeaders('trader') },
+    body: JSON.stringify(signal),
+  })
+  return asJson(res)
+}
+
 // ==================== WebSocket Helper ====================
 
 export interface WebSocketMessage {
   type: string
-  payload: any
+  payload?: any
   timestamp: string
+  agent_name?: string
+  status?: string
+  details?: Record<string, any>
+  fleet?: FleetStatus
+  event_type?: string
+  signal?: {
+    ticker: string
+    action: string
+    confidence: number
+    [key: string]: any
+  }
+  message?: AgentMessage
 }
 
 type WebSocketEventHandler = (message: WebSocketMessage) => void
@@ -533,7 +797,7 @@ export function createAgentWebSocket(
   // Build WebSocket URL
   const getWsUrl = () => {
     const baseUrl = API_BASE.replace(/^http/, 'ws')
-    return agentId ? `${baseUrl}/agents/${agentId}/ws` : `${baseUrl}/agents/ws`
+    return agentId ? `${baseUrl}/agents/${agentId}/ws` : `${baseUrl}/agent-fleet/ws`
   }
 
   const handleMessage = (event: MessageEvent) => {

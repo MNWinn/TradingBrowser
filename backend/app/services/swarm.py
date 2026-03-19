@@ -4,7 +4,7 @@ import time
 from typing import Any
 
 from app.services.focus_runtime import is_focus_ticker
-from app.services.mirofish import mirofish_deep_swarm, mirofish_predict
+from app.services.mirofish_service import mirofish_deep_swarm, mirofish_predict
 
 
 async def market_structure_agent(ticker: str) -> dict:

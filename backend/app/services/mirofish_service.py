@@ -538,6 +538,8 @@ async def mirofish_fleet_analysis(
     
     This uses the advanced MiroFish Fleet layer for sophisticated analysis.
     """
+    # Import here to avoid circular imports
+    from app.services.mirofish.mirofish_fleet import fleet_analyze
     return await fleet_analyze(
         ticker=ticker,
         timeframes=timeframes,
@@ -557,6 +559,8 @@ async def mirofish_cached_predict(
     
     Uses Redis-backed caching for improved performance.
     """
+    # Import here to avoid circular imports
+    from app.services.mirofish.mirofish_cache import get_cache
     cache = get_cache()
     
     async def fetch():
@@ -585,6 +589,8 @@ async def mirofish_ensemble_decision(
     
     Uses the ensemble layer for weighted decision making.
     """
+    # Import here to avoid circular imports
+    from app.services.mirofish.mirofish_ensemble import get_ensemble
     ensemble = get_ensemble()
     result = await ensemble.ensemble_decision(
         ticker=ticker,
@@ -598,6 +604,9 @@ async def mirofish_advanced_status() -> dict:
     """
     Get status of the advanced MiroFish integration layer.
     """
+    # Import here to avoid circular imports
+    from app.services.mirofish.mirofish_cache import get_cache
+    from app.services.mirofish.mirofish_ensemble import get_ensemble
     cache = get_cache()
     ensemble = get_ensemble()
     

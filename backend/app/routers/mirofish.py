@@ -1,6 +1,6 @@
 from fastapi import APIRouter, HTTPException
 
-from app.services.mirofish import (
+from app.services.mirofish_service import (
     mirofish_deep_swarm,
     mirofish_diagnostics,
     mirofish_predict,

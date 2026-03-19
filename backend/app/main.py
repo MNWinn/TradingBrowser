@@ -30,6 +30,7 @@ from app.routers import (
     compliance,
     practice,
 )
+from app.services.agent_api import router as agent_fleet_router
 from app.services.focus_runner import focus_runner_loop
 from app.services.market_data import (
     alpaca_ws_url,
@@ -71,6 +72,7 @@ app.include_router(journal.router)
 app.include_router(settings_router.router)
 app.include_router(compliance.router)
 app.include_router(practice.router)
+app.include_router(agent_fleet_router)
 
 
 @app.on_event("startup")

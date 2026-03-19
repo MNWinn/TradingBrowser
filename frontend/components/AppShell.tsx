@@ -8,6 +8,7 @@ import { CommandPalette } from '@/components/CommandPalette'
 const NAV = [
   { href: '/dashboard', label: 'Dashboard' },
   { href: '/workspace', label: 'Workspace' },
+  { href: '/agents', label: 'Agents' },
   { href: '/swarm', label: 'Swarm' },
   { href: '/paper-console', label: 'Paper Console' },
   { href: '/strategy-lab', label: 'Strategy Lab' },

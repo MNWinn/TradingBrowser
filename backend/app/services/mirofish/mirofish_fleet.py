@@ -466,7 +466,7 @@ class MiroFishFleet:
         semaphore = asyncio.Semaphore(self.max_concurrent)
         
         # Import here to avoid circular imports
-        from app.services.mirofish import mirofish_predict
+        from app.services.mirofish_service import mirofish_predict
 
         async def fetch_single(tf: str, lens: str) -> MiroFishAssessment | None:
             async with semaphore:

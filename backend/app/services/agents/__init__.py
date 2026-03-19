@@ -16,6 +16,24 @@ from .technical_analysis import (
     calculate_bollinger_bands,
 )
 
+# Fleet of Market Research Agents
+from .fleet import (
+    MiroFishAssessmentAgent,
+    MarketScannerAgent,
+    PatternRecognitionAgent,
+    MomentumAgent,
+    SupportResistanceAgent,
+    VolumeProfileAgent,
+)
+from .fleet.orchestrator import (
+    FleetOrchestrator,
+    FleetStrategy,
+    get_fleet_orchestrator,
+    initialize_fleet,
+    shutdown_fleet,
+    run_fleet_analysis,
+)
+
 __all__ = [
     "BaseAgent",
     "AgentStatus",
@@ -29,4 +47,18 @@ __all__ = [
     "calculate_macd",
     "calculate_vwap",
     "calculate_bollinger_bands",
+    # Fleet Agents
+    "MiroFishAssessmentAgent",
+    "MarketScannerAgent",
+    "PatternRecognitionAgent",
+    "MomentumAgent",
+    "SupportResistanceAgent",
+    "VolumeProfileAgent",
+    # Fleet Orchestrator
+    "FleetOrchestrator",
+    "FleetStrategy",
+    "get_fleet_orchestrator",
+    "initialize_fleet",
+    "shutdown_fleet",
+    "run_fleet_analysis",
 ]

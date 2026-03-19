@@ -490,7 +490,7 @@ class MiroFishEnsemble:
     ) -> AgentSignal:
         """Get signal from MiroFish."""
         # Import here to avoid circular imports
-        from app.services.mirofish import mirofish_predict, mirofish_deep_swarm
+        from app.services.mirofish_service import mirofish_predict, mirofish_deep_swarm
         
         try:
             if deep:
