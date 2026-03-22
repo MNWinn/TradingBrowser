@@ -1,27 +1,33 @@
-"""
-Fleet of Market Research Agents for TradingBrowser.
+# Fleet agents module
+from app.services.agents.technical_analysis import technical_analysis_agent
+from app.services.agents.regime_detection import regime_detection_agent
 
-Specialized agents for comprehensive market analysis:
-- MiroFishAssessmentAgent: Deep MiroFish analysis with multiple timeframes
-- MarketScannerAgent: Scans entire market for opportunities
-- PatternRecognitionAgent: Identifies chart patterns
-- MomentumAgent: Tracks momentum indicators and divergences
-- SupportResistanceAgent: Dynamic S/R level detection
-- VolumeProfileAgent: Analyzes volume at price levels
-"""
+# Fleet agent functions (will be populated as files are created)
+async def market_scanner_agent(ticker):
+    # Placeholder - uses technical analysis
+    return await technical_analysis_agent(ticker)
 
-from .mirofish_assessment import MiroFishAssessmentAgent
-from .market_scanner import MarketScannerAgent
-from .pattern_recognition import PatternRecognitionAgent
-from .momentum import MomentumAgent
-from .support_resistance import SupportResistanceAgent
-from .volume_profile import VolumeProfileAgent
+async def momentum_agent(ticker):
+    # Placeholder
+    return await technical_analysis_agent(ticker)
 
-__all__ = [
-    "MiroFishAssessmentAgent",
-    "MarketScannerAgent",
-    "PatternRecognitionAgent",
-    "MomentumAgent",
-    "SupportResistanceAgent",
-    "VolumeProfileAgent",
-]
+async def pattern_recognition_agent(ticker):
+    # Placeholder  
+    return await technical_analysis_agent(ticker)
+
+async def support_resistance_agent(ticker):
+    # Placeholder
+    return await technical_analysis_agent(ticker)
+
+async def volume_profile_agent(ticker):
+    # Placeholder
+    return await technical_analysis_agent(ticker)
+
+async def mirofish_assessment_agent(ticker):
+    # Placeholder - would call MiroFish
+    return {
+        "agent": "mirofish_assessment",
+        "ticker": ticker,
+        "recommendation": "NEUTRAL",
+        "confidence": 0.5
+    }
